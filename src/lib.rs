@@ -93,6 +93,8 @@ mod phalaworld {
         InvalidAddress,
         ExecuteError,
 
+        NotOverlord,
+
         NotReady,
         ProvenFailed,
     }
@@ -280,16 +282,20 @@ mod phalaworld {
         /// @ui formula options.lang javascript
         ///
         #[ink(message)]
-        pub fn set_proven_formula(&mut self, formula: String) {
+        pub fn set_proven_formula(&mut self, formula: String) -> Result<(), Error> {
+            if Self::env().caller() != self.overlord {
+                return Err(Error::NotOverlord)
+            }
             self.proven_formula = Some(formula);
+            Ok(())
         }
 
         #[ink(message)]
-        pub fn get_proven_formula(&self) -> Option<String> {
+        pub fn get_proven_formula(&self) -> Result<Option<String>, Error> {
             if Self::env().caller() != self.overlord {
-                return None
+                return Err(Error::NotOverlord)
             }
-            return self.proven_formula.clone()
+            return Ok(self.proven_formula.clone())
         }
 
         #[ink(message)]
