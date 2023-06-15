@@ -1,0 +1,50 @@
+[package]
+name = "phalaworld"
+version = "0.2.0"
+authors = ["Leechael Yim <leechael@phala.network>"]
+edition = "2021"
+rust-version = "1.56.1"
+
+[dependencies]
+ink = { version = "4", default-features = false }
+ink_storage = { version = "4", default-features = false }
+
+scale = { package = "parity-scale-codec", version = "3.1", default-features = false, features = ["derive"] }
+scale-info = { version = "2.1", default-features = false, features = ["derive"], optional = true }
+primitive-types = { version = "0.11", default-features = false, features = ["codec", "scale-info"] }
+
+pink-extension = { version = "0.4", default-features = false }
+
+impl-serde = { version = "0.4.0", optional = true }
+serde = { version = "1.0.140", default-features = false, features = ["derive", "alloc"]}
+pink-json = { git = "https://github.com/Phala-Network/pink-json.git", branch = "pink", default-features = false }
+
+hex = { version = "0.4.3", default-features = false, features = ["alloc"] }
+
+pink-subrpc = { version = "0.4.2", default-features = false }
+
+phat_js = { version = "0.1", default-features = false }
+
+[dev-dependencies]
+pink-extension-runtime = "0.2"
+
+[lib]
+name = "phalaworld"
+path = "src/lib.rs"
+crate-type = [
+	# Used for normal contract Wasm blobs.
+	"cdylib",
+]
+
+[features]
+default = ["std"]
+std = [
+    "ink/std",
+    "scale/std",
+    "scale-info/std",
+    "pink-extension/std",
+    "pink-json/std",
+    "pink-subrpc/std",
+    "phat_js/std"
+]
+ink-as-dependency = []
