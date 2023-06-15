@@ -7,6 +7,7 @@ use pink_extension as pink;
 #[pink(inner=ink::contract)]
 mod phalaworld {
     use super::pink;
+    use core::fmt;
     use alloc::format;
     use alloc::string::String;
     use alloc::vec;
@@ -27,6 +28,16 @@ mod phalaworld {
         Legendary,
     }
 
+    impl fmt::Display for RarityType {
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            match self {
+                RarityType::Prime => write!(f, "Prime"),
+                RarityType::Magic => write!(f, "Magic"),
+                RarityType::Legendary => write!(f, "Legendary"),
+            }
+        }
+    }
+
     #[derive(Debug, PartialEq, Eq, scale::Encode, scale::Decode)]
     #[cfg_attr(feature = "std", derive(scale_info::TypeInfo, StorageLayout))]
     pub enum RaceType {
@@ -34,6 +45,17 @@ mod phalaworld {
         AISpectre,
         XGene,
         Pandroid,
+    }
+
+    impl fmt::Display for RaceType {
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            match self {
+                RaceType::Cyborg => write!(f, "Cyborg"),
+                RaceType::AISpectre => write!(f, "AISpectre"),
+                RaceType::XGene => write!(f, "XGene"),
+                RaceType::Pandroid => write!(f, "Pandroid"),
+            }
+        }
     }
 
     #[derive(Debug, PartialEq, Eq, scale::Encode, scale::Decode)]
@@ -44,6 +66,18 @@ mod phalaworld {
         RoboWarrior,
         TradeNegotiator,
         Web3Monk,
+    }
+
+    impl fmt::Display for CareerType {
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            match self {
+                CareerType::HackerWizard => write!(f, "HackerWizard"),
+                CareerType::HardwareDruid => write!(f, "HardwareDruid"),
+                CareerType::RoboWarrior => write!(f, "RoboWarrior"),
+                CareerType::TradeNegotiator => write!(f, "TradeNegotiator"),
+                CareerType::Web3Monk => write!(f, "Web3Monk"),
+            }
+        }
     }
 
     #[derive(Decode, Encode)]
@@ -58,6 +92,29 @@ mod phalaworld {
         rarity: RarityType,
         race: RaceType,
         career: CareerType,
+    }
+
+    #[derive(Decode, Encode)]
+    #[cfg_attr(
+        feature = "std",
+        derive(Debug, PartialEq, Eq, scale_info::TypeInfo, StorageLayout)
+    )]
+    pub struct NftAttribtue {
+        trait_type: String,
+        value: String,
+    }
+
+    #[derive(Decode, Encode)]
+    #[cfg_attr(
+        feature = "std",
+        derive(Debug, PartialEq, Eq, scale_info::TypeInfo, StorageLayout)
+    )]
+    pub struct NftMetadata {
+        name: String,
+        description: String,
+        external_url: String,
+        image: String,
+        attributes: Vec<NftAttribtue>,
     }
 
     #[derive(Decode, Encode)]
@@ -271,9 +328,51 @@ mod phalaworld {
         }
 
         #[ink(message)]
-        pub fn metadata_of(&self, token_id: u32) -> Result<Nft, Error> {
+        pub fn metadata_of(&self, token_id: u32) -> Result<NftMetadata, Error> {
             let nft = self.nfts.get(&token_id).ok_or(Error::TokenNotFound)?;
-            Ok(nft)
+            let proven = self.prove_attributes(Some(nft.owner))?;
+
+            let mut attrs: Vec<NftAttribtue> = vec![];
+            attrs.push(NftAttribtue {
+                trait_type: String::from("Generation"),
+                value: format!("{}", nft.generation),
+            });
+            attrs.push(NftAttribtue {
+                trait_type: String::from("Rarity"),
+                value: format!("{}", nft.rarity),
+            });
+            attrs.push(NftAttribtue {
+                trait_type: String::from("Race"),
+                value: format!("{}", nft.race),
+            });
+            attrs.push(NftAttribtue {
+                trait_type: String::from("Career"),
+                value: format!("{}", nft.career),
+            });
+            attrs.push(NftAttribtue {
+                trait_type: String::from("Dexterity"),
+                value: format!("{}", proven.dex),
+            });
+            attrs.push(NftAttribtue {
+                trait_type: String::from("Willpower"),
+                value: format!("{}", proven.will),
+            });
+            attrs.push(NftAttribtue {
+                trait_type: String::from("Intelligence"),
+                value: format!("{}", proven.int),
+            });
+            attrs.push(NftAttribtue {
+                trait_type: String::from("Strength"),
+                value: format!("{}", proven.str),
+            });
+
+            Ok(NftMetadata {
+                name: format!("{} #{}", self.name, token_id),
+                description: self.description.clone(),
+                external_url: String::from(""),
+                image: String::from(""),
+                attributes: attrs,
+            })
         }
 
         /// Set the proven formula, only available from overlord.
@@ -299,12 +398,13 @@ mod phalaworld {
         }
 
         #[ink(message)]
-        pub fn prove_attributes(&self) -> Result<SpiritAttributes, Error> {
+        pub fn prove_attributes(&self, account: Option<AccountId>) -> Result<SpiritAttributes, Error> {
             if self.proven_formula.is_none() {
                 return Err(Error::NotReady)
             }
 
-            let account: [u8; 32] = *Self::env().caller().as_ref();
+            let target = account.unwrap_or(Self::env().caller());
+            let account: [u8; 32] = *target.as_ref();
             let version = get_ss58addr_version("phala".into()).unwrap();
             let addr = account.to_ss58check_with_version(version.prefix());
 
