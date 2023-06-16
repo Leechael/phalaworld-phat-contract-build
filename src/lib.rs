@@ -127,7 +127,7 @@ mod phalaworld {
         dex: u32,
         will: u32,
         str: u32,
-        updated_at: u64,
+        updated_at: Option<u64>,
     }
 
     #[derive(Decode, Encode)]
@@ -138,6 +138,16 @@ mod phalaworld {
     pub struct KhalaComputationStats {
         total_idle_worker_count: u64,
         total_delegation_value: String,
+    }
+
+    #[derive(Decode, Encode)]
+    #[cfg_attr(
+        feature = "std",
+        derive(Debug, PartialEq, Eq, scale_info::TypeInfo, StorageLayout)
+    )]
+    pub enum TokenIdOrAddress {
+        TokenId(u32),
+        Address(AccountId),
     }
 
     #[derive(Encode, Decode)]
@@ -165,6 +175,7 @@ mod phalaworld {
         nfts: Mapping<u32, Nft>,
         generation: u32,
         proven_formula: Option<String>,
+        init_attributes: SpiritAttributes,
     }
 
     ///
@@ -238,20 +249,7 @@ mod phalaworld {
 
     impl PhalaWorld {
         #[ink(constructor)]
-        pub fn new() -> Self {
-            Self {
-                name: String::from("PhalaWorld"),
-                description: String::from(""),
-                overlord: Self::env().caller(),
-                total_nfts: 0,
-                nfts: Mapping::new(),
-                generation: 0,
-                proven_formula: None,
-            }
-        }
-
-        #[ink(constructor)]
-        pub fn customize(name: String, description: Option<String>) -> Self {
+        pub fn create(name: String, description: Option<String>) -> Self {
             Self {
                 name: name.clone(),
                 description: description.unwrap_or(String::from("")),
@@ -260,6 +258,13 @@ mod phalaworld {
                 nfts: Mapping::new(),
                 generation: 0,
                 proven_formula: None,
+                init_attributes: SpiritAttributes {
+                    int: 0,
+                    dex: 0,
+                    will: 0,
+                    str: 0,
+                    updated_at: None,
+                },
             }
         }
 
@@ -279,6 +284,11 @@ mod phalaworld {
         pub fn get_collection_description(&self) -> String {
             let val = self.description.clone();
             return val
+        }
+
+        #[ink(message)]
+        pub fn set_init_attributes(&mut self, payload: SpiritAttributes) {
+            self.init_attributes = payload;
         }
 
         /// Set the description text for the NFT Collection.
@@ -375,6 +385,22 @@ mod phalaworld {
             })
         }
 
+        #[ink(message)]
+        pub fn nft_of(&self, token_id: u32) -> Result<Nft, Error> {
+            let nft = self.nfts.get(&token_id).ok_or(Error::TokenNotFound)?;
+            Ok(nft)
+        }
+
+        #[ink(message)]
+        pub fn bulk_nft_of(&self, token_ids: Vec<u32>) -> Result<Vec<Nft>, Error> {
+            let mut nfts: Vec<Nft> = vec![];
+            for id in token_ids {
+                let nft = self.nfts.get(&id).ok_or(Error::TokenNotFound)?;
+                nfts.push(nft);
+            }
+            Ok(nfts)
+        }
+
         /// Set the proven formula, only available from overlord.
         ///
         /// @ui formula widget codemirror
@@ -428,11 +454,11 @@ mod phalaworld {
             let result: ProvenResult = pink_json::from_slice(&*result_u8).or(Err(Error::ProvenFailed))?;
 
             Ok(SpiritAttributes {
-                int: result.int,
-                str: result.str,
-                dex: result.dex,
-                will: result.will,
-                updated_at: ext().untrusted_millis_since_unix_epoch(),
+                int: result.int + self.init_attributes.int,
+                str: result.str + self.init_attributes.str,
+                dex: result.dex + self.init_attributes.dex,
+                will: result.will + self.init_attributes.will,
+                updated_at: Some(ext().untrusted_millis_since_unix_epoch()),
             })
         }
 
