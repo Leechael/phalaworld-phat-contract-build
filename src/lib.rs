@@ -268,11 +268,9 @@ mod phalaworld {
             }
         }
 
-        ///
-        /// END: constructors
-        ///
-
         /// Get the NFT Collection name.
+        ///
+        /// @category Basic Information
         #[ink(message)]
         pub fn get_collection_name(&self) -> String {
             let val = self.name.clone();
@@ -280,12 +278,17 @@ mod phalaworld {
         }
 
         /// Get the NFT Collection description.
+        ///
+        /// @category Basic Information
         #[ink(message)]
         pub fn get_collection_description(&self) -> String {
             let val = self.description.clone();
             return val
         }
 
+        /// Get the initial attributes for a bew Spirit Nft.
+        ///
+        /// @category Overlord Operations
         #[ink(message)]
         pub fn set_init_attributes(&mut self, payload: SpiritAttributes) {
             self.init_attributes = payload;
@@ -302,6 +305,7 @@ mod phalaworld {
         /// @ui description widget codemirror
         /// @ui description options.lang markdown
         ///
+        /// @category Overlord Operations
         #[ink(message)]
         pub fn set_collection_description(&mut self, description: String) {
             if self.overlord != Self::env().caller() {
@@ -310,15 +314,17 @@ mod phalaworld {
             self.description = description;
         }
 
+        /// Get the Account ID of overlord.
+        ///
+        /// @category Basic Information
         #[ink(message)]
         pub fn overlord(&self) -> AccountId {
             return self.overlord.clone()
         }
 
-        //
-        // token operations.
-        //
-
+        /// Get the total number of NFTs minted.
+        ///
+        /// @category Nft
         #[ink(message)]
         pub fn total_minted(&self, race: Option<RaceType>) -> u32 {
             if race.is_none() {
@@ -339,6 +345,9 @@ mod phalaworld {
             return counts
         }
 
+        /// Get the total number of NFTs minted.
+        ///
+        /// @category Nft
         #[ink(message)]
         pub fn mint(&mut self, rarity: RarityType, race: RaceType, career: CareerType) -> Result<u32, Error> {
             let id = self.total_nfts;
@@ -355,6 +364,9 @@ mod phalaworld {
             Ok(id)
         }
 
+        /// Get metadata of a specific NFT.
+        ///
+        /// @category Nft
         #[ink(message)]
         pub fn metadata_of(&self, token_id: u32) -> Result<NftMetadata, Error> {
             let nft = self.nfts.get(&token_id).ok_or(Error::TokenNotFound)?;
@@ -403,12 +415,19 @@ mod phalaworld {
             })
         }
 
+        /// Get basic information of a specific NFT.
+        ///
+        /// @category Nft
         #[ink(message)]
         pub fn nft_of(&self, token_id: u32) -> Result<Nft, Error> {
             let nft = self.nfts.get(&token_id).ok_or(Error::TokenNotFound)?;
             Ok(nft)
         }
 
+
+        /// Get basic information of a list of NFT.
+        ///
+        /// @category Nft
         #[ink(message)]
         pub fn bulk_nft_of(&self, token_ids: Vec<u32>) -> Result<Vec<Nft>, Error> {
             let mut nfts: Vec<Nft> = vec![];
@@ -424,6 +443,7 @@ mod phalaworld {
         /// @ui formula widget codemirror
         /// @ui formula options.lang javascript
         ///
+        /// @category Overlord Operations
         #[ink(message)]
         pub fn set_proven_formula(&mut self, formula: String) -> Result<(), Error> {
             if Self::env().caller() != self.overlord {
@@ -433,6 +453,9 @@ mod phalaworld {
             Ok(())
         }
 
+        /// Check the proven formula, only available from overlord.
+        ///
+        /// @category Overlord Operations
         #[ink(message)]
         pub fn get_proven_formula(&self) -> Result<Option<String>, Error> {
             if Self::env().caller() != self.overlord {
@@ -441,6 +464,9 @@ mod phalaworld {
             return Ok(self.proven_formula.clone())
         }
 
+        /// Get the Spirit Attributes of a specific account, or the caller if not specified.
+        ///
+        /// @category Nft
         #[ink(message)]
         pub fn prove_attributes(&self, account: Option<AccountId>) -> Result<SpiritAttributes, Error> {
             if self.proven_formula.is_none() {
