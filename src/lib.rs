@@ -304,6 +304,9 @@ mod phalaworld {
         ///
         #[ink(message)]
         pub fn set_collection_description(&mut self, description: String) {
+            if self.overlord != Self::env().caller() {
+                panic!("Only overlord can set collection description")
+            }
             self.description = description;
         }
 
