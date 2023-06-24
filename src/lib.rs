@@ -320,8 +320,23 @@ mod phalaworld {
         //
 
         #[ink(message)]
-        pub fn total_minted(&self) -> u32 {
-            return self.total_nfts
+        pub fn total_minted(&self, race: Option<RaceType>) -> u32 {
+            if race.is_none() {
+                return self.total_nfts
+            }
+            let expected = race.unwrap();
+            let mut counts = 0;
+            let mut token_id = 0;
+            while token_id < self.total_nfts {
+                let nft = self.nfts.get(token_id);
+                if nft.is_some() {
+                    if nft.unwrap().race == expected {
+                        counts += 1;
+                    }
+                }
+                token_id += 1;
+            }
+            return counts
         }
 
         #[ink(message)]
