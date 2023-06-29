@@ -429,11 +429,22 @@ mod phalaworld {
         ///
         /// @category Nft
         #[ink(message)]
-        pub fn bulk_nft_of(&self, token_ids: Vec<u32>) -> Result<Vec<Nft>, Error> {
+        pub fn bulk_nft_of(&self, token_ids: Option<Vec<u32>>) -> Result<Vec<Nft>, Error> {
             let mut nfts: Vec<Nft> = vec![];
-            for id in token_ids {
-                let nft = self.nfts.get(&id).ok_or(Error::TokenNotFound)?;
-                nfts.push(nft);
+            if token_ids.is_none() {
+                let mut token_id = 0;
+                while token_id < self.total_nfts {
+                    let nft = self.nfts.get(token_id);
+                    if nft.is_some() {
+                        nfts.push(nft.unwrap());
+                    }
+                    token_id += 1;
+                }
+            } else {
+                for id in token_ids.unwrap() {
+                    let nft = self.nfts.get(&id).ok_or(Error::TokenNotFound)?;
+                    nfts.push(nft);
+                }
             }
             Ok(nfts)
         }
