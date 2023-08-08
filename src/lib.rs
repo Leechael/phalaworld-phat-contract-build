@@ -291,6 +291,9 @@ mod phalaworld {
         /// @category Overlord Operations
         #[ink(message)]
         pub fn set_init_attributes(&mut self, payload: SpiritAttributes) {
+            if self.overlord != self.env().caller() {
+                panic!("Only overlord can set init attributes")
+            }
             self.init_attributes = payload;
         }
 
