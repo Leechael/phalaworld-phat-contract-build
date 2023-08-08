@@ -427,6 +427,8 @@ mod phalaworld {
 
         /// Get basic information of a list of NFT.
         ///
+        /// If you want to get all NFTs, just pass `None` as the argument. Otherwise, you can pass a list of token IDs.
+        ///
         /// @category Nft
         #[ink(message)]
         pub fn bulk_nft_of(&self, token_ids: Option<Vec<u32>>) -> Result<Vec<Nft>, Error> {
