@@ -2,6 +2,7 @@
 extern crate alloc;
 
 use pink_extension as pink;
+use ink::env;
 
 #[pink::contract(env=PinkEnvironment)]
 #[pink(inner=ink::contract)]
@@ -322,6 +323,7 @@ mod phalaworld {
         /// @category Basic Information
         #[ink(message)]
         pub fn overlord(&self) -> AccountId {
+            ink::env::debug_println!("call overlord");
             return self.overlord.clone()
         }
 
